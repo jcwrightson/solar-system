@@ -7,6 +7,7 @@ public class SolarSystem : MonoBehaviour {
 
     public List<Transform> Spheres;
     public List<Body> Bodies;
+	public List<Planet> Planets;
 
     public double G;
     public double MassScale;
@@ -14,6 +15,8 @@ public class SolarSystem : MonoBehaviour {
 
     [Range(1f,100f)]
     public float TimeWarp;
+
+
 
     private void Awake()
     {
@@ -29,19 +32,40 @@ public class SolarSystem : MonoBehaviour {
 
         foreach (Transform sphere in transform)
         {
+			Debug.Log(sphere);
             Spheres.Add(sphere);
+
+			foreach( Transform moon in sphere.transform)
+			{
+				Spheres.Add(moon);
+			}
         }
 
 
-		
-		//Mass, Radius, Distance From Parent, Transform, 
-		Bodies.Add(new Body(1.98847 * Math.Pow(10, 30), 696.342 * Math.Pow(10, 6), 0, Spheres[0])); // Sun
-		Bodies.Add(new Body(3.285 * Math.Pow(10, 23), 2.439 * Math.Pow(10, 6), 57.91 * Math.Pow(10, 6) * 1000, Spheres[1])); // Mercury
-		Bodies.Add(new Body(4.867 * Math.Pow(10, 24), 6.0518 * Math.Pow(10, 6), 108.2 * Math.Pow(10, 6) * 1000, Spheres[2])); // Venus
-		Bodies.Add(new Body(5.972 * Math.Pow(10, 24), 6.371 * Math.Pow(10, 6), 149.6 * Math.Pow(10, 6) * 1000, Spheres[3])); // Earth
+		Planets.Add(new Planet("Sun", new Body(1.98847 * Math.Pow(10, 30), 696.342 * Math.Pow(10, 6), 0, Spheres[0])));
+		Planets.Add(new Planet("Mercury", new Body(3.285 * Math.Pow(10, 23), 2.439 * Math.Pow(10, 6), 57.91 * Math.Pow(10, 6) * 1000, Spheres[1])));
+		Planets.Add(new Planet("Venus", new Body(4.867 * Math.Pow(10, 24), 6.0518 * Math.Pow(10, 6), 108.2 * Math.Pow(10, 6) * 1000, Spheres[2])));
+		Planets.Add(new Planet("Earth", new Body(5.972 * Math.Pow(10, 24), 6.371 * Math.Pow(10, 6), 149.6 * Math.Pow(10, 6) * 1000, Spheres[3])));
 
-		foreach( Body body in Bodies) {
-		    this.PositionAndScale(body);
+		
+
+		Planets[3].CreateMoon(new Body(0.073 * Math.Pow(10, 24), 1737.5 * Math.Pow(10, 3), 384400 * 1000, Spheres[4]));
+		
+		
+		
+
+		foreach(Planet planet in Planets)
+		{
+			PositionAndScale(planet.PlanetBody);
+			Bodies.Add(planet.PlanetBody);
+
+			if (planet.Moons != null) {
+
+				foreach (Body moon in planet.Moons){
+					PositionAndScale(moon);
+					Bodies.Add(moon);
+				}
+			}
 		}
 
 
@@ -60,7 +84,6 @@ public class SolarSystem : MonoBehaviour {
     }
 
     private void FixedUpdate () { 
-       
 
         foreach (Body body in Bodies)
         {

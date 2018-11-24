@@ -18,11 +18,6 @@ public class Body {
         Sphere = sphere;
     }
 
-    public Body(double mass, double radius, double distanceToParent)
-    {
-        Mass = mass;
-        Radius = radius;
-        DistanceToParent = distanceToParent;
-    }
+   
 
 }
