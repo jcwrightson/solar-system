@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -18,6 +19,17 @@ public class Body {
         Sphere = sphere;
     }
 
-   
+	public void PositionAndScale(double SizeScale, double DistanceScale, double MassScale)
+	{
+		Rigidbody Rb = Sphere.GetComponent<Rigidbody>();
+		
+		double ScaledMass = Math.Round(Mass * MassScale, 4);
+		double ScaledRadius = Math.Round((Radius * 2) * SizeScale, 4);
+		double ScaledDistanceToParent = Math.Round(DistanceToParent * DistanceScale, 4);
+
+		Rb.mass = (float)ScaledMass;
+		Rb.transform.localScale = new Vector3((float)ScaledRadius, (float)ScaledRadius, (float)ScaledRadius);
+		Rb.transform.localPosition = new Vector3(-(float)ScaledDistanceToParent, 0, 0);
+	}
 
 }

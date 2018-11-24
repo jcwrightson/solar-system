@@ -7,33 +7,71 @@ public class Orbit : MonoBehaviour {
 
     public SolarSystem solarSystem;
     public Rigidbody rb;
-    public Rigidbody parent;
+	public LineRenderer Lr;
 
-    public double OrbitalVelocity;
+	public double OrbitalVelocity;
+	public double RelativeVelocity;
     public double Velocity;
     public double Period;
     public double Apoapsis;
     public double Periapsis;
     public double SemiMajorAxis;
-    public double AltitudeAboveSeaLevel;
+    public double Altitude;
 
-    private void FixedUpdate()
+	private void Start()
+	{
+		Lr = rb.transform.GetComponent<LineRenderer>();
+		
+	}
+
+	private void FixedUpdate()
     {
-       
-        Velocity = (rb.velocity.magnitude / solarSystem.SizeScale) / Time.fixedDeltaTime;
 
-        Vector3 Difference = parent.transform.position - rb.transform.position;
-        float Distance = Difference.magnitude;
+		//      Velocity = Math.Round(rb.velocity.magnitude  / Time.fixedUnscaledDeltaTime, 4);
 
-        float thisRadius = rb.transform.localScale.x * 0.5f;
-        float parentRadius = parent.transform.localScale.x * 0.5f;
-        float asl = Distance - (thisRadius + parentRadius);
+		float Distance = Vector3.Distance(rb.transform.position, rb.transform.parent.transform.position);
 
-        AltitudeAboveSeaLevel = asl / solarSystem.SizeScale;
+		float thisRadius = rb.transform.localScale.x * 0.5f;
+		float parentRadius = rb.transform.parent.transform.localScale.x * 0.5f;
+		float asl = Distance - (thisRadius + parentRadius);
+
+	    Altitude = Math.Round(asl, 4);
 
 
-        OrbitalVelocity = (Math.Sqrt(solarSystem.G * parent.mass / Distance) / solarSystem.SizeScale);
+		//if (Altitude == 0)
+		//{
+		//	OrbitalVelocity = 0;
+		//}
+		//else
+		//{
+		//	OrbitalVelocity = Math.Round(Math.Sqrt(solarSystem.G * parent.mass / Distance), 4);
+		//}
 
-    
-    }
+
+		//Debug.Log(rb.transform.parent.name);
+
+		DrawAxis();
+		
+	}
+
+	public double calcVelocity(double Mass, double Radius){
+		return Math.Sqrt(solarSystem.G * Mass / Radius);
+	}
+
+	public double calcPeriod(double Radius, double Mass){
+		return 2 * Math.PI * Math.Sqrt(Mathf.Pow((float)Radius, 3) / solarSystem.G * Mass);
+	}
+
+
+	private void DrawAxis()
+	{
+		
+		
+
+		Lr.SetPosition(0, rb.transform.position);
+		Lr.SetPosition(1, rb.transform.parent.transform.position);
+
+	
+
+	}
 }

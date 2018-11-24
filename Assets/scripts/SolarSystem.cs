@@ -12,27 +12,30 @@ public class SolarSystem : MonoBehaviour {
     public double G;
     public double MassScale;
     public double SizeScale;
+	public double DistanceScale;
+	public bool GravityEnabled;
+	public double GravityMultiplier;
 
-    [Range(1f,100f)]
-    public float TimeWarp;
-
-
+	[Range(1f, 100f)]
+	public float TimeWarp;
 
     private void Awake()
     {
 
         MassScale = 0.0000000000000000000001;
         SizeScale = 0.0000001;
-        TimeWarp = 10;
+		DistanceScale = 0.00000001;
+        TimeWarp = 50;
+		GravityMultiplier = 100;
 
-        G = 6.67384 * Math.Pow(10, -11) / SizeScale;
-
-        Time.timeScale = Time.timeScale * TimeWarp;
+       
+		//Time.fixedDeltaTime = Time.fixedDeltaTime / TimeWarp;
+		GravityEnabled = false;
 
 
         foreach (Transform sphere in transform)
         {
-			Debug.Log(sphere);
+			
             Spheres.Add(sphere);
 
 			foreach( Transform moon in sphere.transform)
@@ -42,27 +45,29 @@ public class SolarSystem : MonoBehaviour {
         }
 
 
-		Planets.Add(new Planet("Sun", new Body(1.98847 * Math.Pow(10, 30), 696.342 * Math.Pow(10, 6), 0, Spheres[0])));
-		Planets.Add(new Planet("Mercury", new Body(3.285 * Math.Pow(10, 23), 2.439 * Math.Pow(10, 6), 57.91 * Math.Pow(10, 6) * 1000, Spheres[1])));
-		Planets.Add(new Planet("Venus", new Body(4.867 * Math.Pow(10, 24), 6.0518 * Math.Pow(10, 6), 108.2 * Math.Pow(10, 6) * 1000, Spheres[2])));
-		Planets.Add(new Planet("Earth", new Body(5.972 * Math.Pow(10, 24), 6.371 * Math.Pow(10, 6), 149.6 * Math.Pow(10, 6) * 1000, Spheres[3])));
-
-		
-
+		Planets.Add(new Planet("Sun", new Body(1.98847 * Math.Pow(10, 30), 696342 * Math.Pow(10, 3), 0, Spheres[0])));
+		Planets.Add(new Planet("Mercury", new Body(3.285 * Math.Pow(10, 23), 2439 * Math.Pow(10, 3), 57.91 * Math.Pow(10, 6) * 1000, Spheres[1])));
+		Planets.Add(new Planet("Venus", new Body(4.867 * Math.Pow(10, 24), 6052 * Math.Pow(10, 3), 108.2 * Math.Pow(10, 6) * 1000, Spheres[2])));
+		Planets.Add(new Planet("Earth", new Body(5.972 * Math.Pow(10, 24), 6371 * Math.Pow(10, 3), 149.6 * Math.Pow(10, 6) * 1000, Spheres[3])));
 		Planets[3].CreateMoon(new Body(0.073 * Math.Pow(10, 24), 1737.5 * Math.Pow(10, 3), 384400 * 1000, Spheres[4]));
-		
-		
-		
+		Planets.Add(new Planet("Mars", new Body(0.642 * Math.Pow(10, 24), 3396 * Math.Pow(10, 3), 227.9 * Math.Pow(10, 6) * 1000, Spheres[5])));
+		Planets.Add(new Planet("Jupiter", new Body(1898 * Math.Pow(10, 24), 71492 * Math.Pow(10, 3), 778.6 * Math.Pow(10, 6) * 1000, Spheres[6])));
+		Planets.Add(new Planet("Saturn", new Body(568 * Math.Pow(10, 24), 60268 * Math.Pow(10, 3), 1433.5 * Math.Pow(10, 6) * 1000, Spheres[7])));
+		Planets.Add(new Planet("Uranus", new Body(86.8 * Math.Pow(10, 24), 25559 * Math.Pow(10, 3), 2872.5 * Math.Pow(10, 6) * 1000, Spheres[8])));
+		Planets.Add(new Planet("Neptune", new Body(102 * Math.Pow(10, 24), 24764 * Math.Pow(10, 3), 4495.1 * Math.Pow(10, 6) * 1000, Spheres[9])));
+		Planets.Add(new Planet("Pluto", new Body(0.0146 * Math.Pow(10, 24), 1185 * Math.Pow(10, 3), 5906.4 * Math.Pow(10, 6) * 1000, Spheres[10])));
 
-		foreach(Planet planet in Planets)
+		//Planets.Add(new Planet("BlackHole", new Body((1.98847 * Math.Pow(10, 24) * Math.Pow(10, 24)), 1, 5906.4 * Math.Pow(10, 6) * 1000, Spheres[11])));
+
+		foreach (Planet planet in Planets)
 		{
-			PositionAndScale(planet.PlanetBody);
+			planet.PlanetBody.PositionAndScale(SizeScale, DistanceScale, MassScale);
 			Bodies.Add(planet.PlanetBody);
 
 			if (planet.Moons != null) {
 
 				foreach (Body moon in planet.Moons){
-					PositionAndScale(moon);
+					moon.PositionAndScale(SizeScale, DistanceScale, MassScale);
 					Bodies.Add(moon);
 				}
 			}
@@ -71,41 +76,38 @@ public class SolarSystem : MonoBehaviour {
 
 	}
 
-    public void PositionAndScale(Body body)
-    {
-        Rigidbody Rb =  body.Sphere.GetComponent<Rigidbody>();
-        double ScaledMass = body.Mass * MassScale;
-        double ScaledRadius = (body.Radius * 2) * SizeScale;
-        double ScaledDistanceToParent = body.DistanceToParent * SizeScale;
+	private void DoGravity()
+	{
+		foreach (Body body in Bodies)
+		{
 
-        Rb.mass = (float)ScaledMass;
-        Rb.transform.localScale = new Vector3((float)ScaledRadius, (float)ScaledRadius, (float)ScaledRadius);
-        Rb.transform.localPosition = new Vector3(-(float)ScaledDistanceToParent, 0, 0);
-    }
+			Vector3 CurrentPosition = body.Sphere.transform.position;
+			float thisMass = body.Sphere.GetComponent<Rigidbody>().mass;
 
-    private void FixedUpdate () { 
+			foreach (Body bbody in Bodies)
+			{
+				if (body != bbody)
+				{
 
-        foreach (Body body in Bodies)
-        {
-           
-            Vector3 CurrentPosition = body.Sphere.transform.position;
-            float thisMass = body.Sphere.GetComponent<Rigidbody>().mass;
+					Vector3 Difference = CurrentPosition - bbody.Sphere.transform.position;
+					float Distance = Difference.magnitude;
+					float GravityForce = (float)G * (bbody.Sphere.GetComponent<Rigidbody>().mass * thisMass) / (Distance * Distance);
+					Vector3 GravityVector = (Difference.normalized * GravityForce);
 
-            foreach (Body bbody in Bodies)
-            {
-              if (body != bbody)
-               {
+					bbody.Sphere.GetComponent<Rigidbody>().AddForce(GravityVector, ForceMode.Force);
+				}
+			}
+		}
+	}
 
-                   Vector3 Difference = CurrentPosition - bbody.Sphere.transform.position;
-                   float Distance = Difference.magnitude;
-                   Vector3 GravityDirection = Difference.normalized;
+    private void FixedUpdate () {
 
-                   float GravityForce = (float)G * (bbody.Sphere.GetComponent<Rigidbody>().mass * thisMass) / (Distance * Distance);
-                   Vector3 GravityVector = (GravityDirection * GravityForce);
+		G = 6.67384 * Math.Pow(10, -11) * GravityMultiplier;
+		//Time.timeScale = Time.timeScale * TimeWarp;
 
-                   bbody.Sphere.GetComponent<Rigidbody>().AddForce(GravityVector, ForceMode.Force);
-                }
-           }
-        }
+		if (GravityEnabled)
+		{
+			DoGravity();
+		}
 	}
 }
