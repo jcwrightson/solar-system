@@ -5,7 +5,6 @@ using UnityEngine;
 
 public class Orbit : MonoBehaviour {
 
-    public CelestialBody celestialBody;
     public SolarSystem solarSystem;
     public Rigidbody rb;
     public Rigidbody parent;

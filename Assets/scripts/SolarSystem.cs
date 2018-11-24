@@ -5,7 +5,9 @@ using UnityEngine;
 
 public class SolarSystem : MonoBehaviour {
 
-    public GameObject[] celestialBodies;
+    public List<Transform> Spheres;
+    public List<Body> Bodies;
+
     public double G;
     public double MassScale;
     public double SizeScale;
@@ -15,53 +17,72 @@ public class SolarSystem : MonoBehaviour {
 
     private void Awake()
     {
-        celestialBodies = GameObject.FindGameObjectsWithTag("Celestial");
+
         MassScale = 0.0000000000000000000001;
         SizeScale = 0.0000001;
         TimeWarp = 10;
 
-        G = 6.67384 * Math.Pow(10, -11) * 100000000f;
+        G = 6.67384 * Math.Pow(10, -11) / SizeScale;
 
         Time.timeScale = Time.timeScale * TimeWarp;
-        //Time.fixedDeltaTime = Time.fixedDeltaTime / Time.timeScale;
 
-    }
 
-    public void PositionAndScale(Double Mass, Double Radius, Double DistanceToParent, Rigidbody Rb)
+        foreach (Transform sphere in transform)
+        {
+            Spheres.Add(sphere);
+        }
+
+
+		
+		//Mass, Radius, Distance From Parent, Transform, 
+		Bodies.Add(new Body(1.98847 * Math.Pow(10, 30), 696.342 * Math.Pow(10, 6), 0, Spheres[0])); // Sun
+		Bodies.Add(new Body(3.285 * Math.Pow(10, 23), 2.439 * Math.Pow(10, 6), 57.91 * Math.Pow(10, 6) * 1000, Spheres[1])); // Mercury
+		Bodies.Add(new Body(4.867 * Math.Pow(10, 24), 6.0518 * Math.Pow(10, 6), 108.2 * Math.Pow(10, 6) * 1000, Spheres[2])); // Venus
+		Bodies.Add(new Body(5.972 * Math.Pow(10, 24), 6.371 * Math.Pow(10, 6), 149.6 * Math.Pow(10, 6) * 1000, Spheres[3])); // Earth
+
+		foreach( Body body in Bodies) {
+		    this.PositionAndScale(body);
+		}
+
+
+	}
+
+    public void PositionAndScale(Body body)
     {
-        double ScaledMass = Mass * MassScale;
-        double ScaledRadius = (Radius * 2) * SizeScale;
-        double ScaledDistanceToParent = DistanceToParent * SizeScale;
+        Rigidbody Rb =  body.Sphere.GetComponent<Rigidbody>();
+        double ScaledMass = body.Mass * MassScale;
+        double ScaledRadius = (body.Radius * 2) * SizeScale;
+        double ScaledDistanceToParent = body.DistanceToParent * SizeScale;
 
         Rb.mass = (float)ScaledMass;
         Rb.transform.localScale = new Vector3((float)ScaledRadius, (float)ScaledRadius, (float)ScaledRadius);
         Rb.transform.localPosition = new Vector3(-(float)ScaledDistanceToParent, 0, 0);
     }
 
-    private void FixedUpdate () {        
+    private void FixedUpdate () { 
+       
 
-        foreach (GameObject Body in celestialBodies)
+        foreach (Body body in Bodies)
         {
            
-            Vector3 CurrentPosition = Body.transform.position;
-            float thisMass = Body.GetComponent<Rigidbody>().mass;
+            Vector3 CurrentPosition = body.Sphere.transform.position;
+            float thisMass = body.Sphere.GetComponent<Rigidbody>().mass;
 
-            foreach (GameObject BBody in celestialBodies)
+            foreach (Body bbody in Bodies)
             {
-                if (Body != BBody)
-                {
+              if (body != bbody)
+               {
 
-                    Vector3 Difference = CurrentPosition - BBody.transform.position;
-                    float Distance = Difference.magnitude;
-                    Vector3 GravityDirection = Difference.normalized;
+                   Vector3 Difference = CurrentPosition - bbody.Sphere.transform.position;
+                   float Distance = Difference.magnitude;
+                   Vector3 GravityDirection = Difference.normalized;
 
-                   
-                    float GravityForce = (float)G * (BBody.GetComponent<Rigidbody>().mass * thisMass) / (Distance * Distance);
-                    Vector3 GravityVector = (GravityDirection * GravityForce);
+                   float GravityForce = (float)G * (bbody.Sphere.GetComponent<Rigidbody>().mass * thisMass) / (Distance * Distance);
+                   Vector3 GravityVector = (GravityDirection * GravityForce);
 
-                    BBody.GetComponent<Rigidbody>().AddForce(GravityVector, ForceMode.Force);
+                   bbody.Sphere.GetComponent<Rigidbody>().AddForce(GravityVector, ForceMode.Force);
                 }
-            }
+           }
         }
 	}
 }
