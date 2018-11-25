@@ -9,7 +9,7 @@ public class SolarSystem : MonoBehaviour {
     public List<Body> Bodies;
 	public List<Planet> Planets;
 
-    public double G;
+	public double G;
     public double MassScale;
     public double SizeScale;
 	public double DistanceScale;
@@ -19,31 +19,36 @@ public class SolarSystem : MonoBehaviour {
 	[Range(1f, 100f)]
 	public float TimeWarp;
 
-    private void Awake()
+    private void Start()
     {
 
-        MassScale = 0.0000000000000000000001;
-        SizeScale = 0.0000001;
+		CreateSolarSystem();
+
+	}
+
+	private void CreateSolarSystem()
+	{
+
+		MassScale = 0.0000000000000000000001;
+		SizeScale = 0.0000001;
 		DistanceScale = 0.00000001;
-        TimeWarp = 50;
-		GravityMultiplier = 100;
+		TimeWarp = 1;
 
-       
-		//Time.fixedDeltaTime = Time.fixedDeltaTime / TimeWarp;
-		GravityEnabled = false;
+		G = 6.67384 * Math.Pow(10, -11);
+		GravityMultiplier = 100000;
+		GravityEnabled = true;
 
 
-        foreach (Transform sphere in transform)
-        {
-			
-            Spheres.Add(sphere);
+		foreach (Transform sphere in transform)
+		{
 
-			foreach( Transform moon in sphere.transform)
+			Spheres.Add(sphere);
+
+			foreach (Transform moon in sphere.transform)
 			{
 				Spheres.Add(moon);
 			}
-        }
-
+		}
 
 		Planets.Add(new Planet("Sun", new Body(1.98847 * Math.Pow(10, 30), 696342 * Math.Pow(10, 3), 0, Spheres[0])));
 		Planets.Add(new Planet("Mercury", new Body(3.285 * Math.Pow(10, 23), 2439 * Math.Pow(10, 3), 57.91 * Math.Pow(10, 6) * 1000, Spheres[1])));
@@ -64,17 +69,26 @@ public class SolarSystem : MonoBehaviour {
 			planet.PlanetBody.PositionAndScale(SizeScale, DistanceScale, MassScale);
 			Bodies.Add(planet.PlanetBody);
 
-			if (planet.Moons != null) {
+			if (planet.Moons != null)
+			{
 
-				foreach (Body moon in planet.Moons){
+				foreach (Body moon in planet.Moons)
+				{
 					moon.PositionAndScale(SizeScale, DistanceScale, MassScale);
 					Bodies.Add(moon);
 				}
 			}
 		}
 
+		
 
 	}
+
+	private void CreateRandomSystem()
+	{
+
+	}
+
 
 	private void DoGravity()
 	{
@@ -91,7 +105,7 @@ public class SolarSystem : MonoBehaviour {
 
 					Vector3 Difference = CurrentPosition - bbody.Sphere.transform.position;
 					float Distance = Difference.magnitude;
-					float GravityForce = (float)G * (bbody.Sphere.GetComponent<Rigidbody>().mass * thisMass) / (Distance * Distance);
+					float GravityForce = (float)(G * GravityMultiplier) * (bbody.Sphere.GetComponent<Rigidbody>().mass * thisMass) / (Distance * Distance);
 					Vector3 GravityVector = (Difference.normalized * GravityForce);
 
 					bbody.Sphere.GetComponent<Rigidbody>().AddForce(GravityVector, ForceMode.Force);
@@ -102,7 +116,6 @@ public class SolarSystem : MonoBehaviour {
 
     private void FixedUpdate () {
 
-		G = 6.67384 * Math.Pow(10, -11) * GravityMultiplier;
 		//Time.timeScale = Time.timeScale * TimeWarp;
 
 		if (GravityEnabled)
