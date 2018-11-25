@@ -5,23 +5,20 @@ using UnityEngine;
 
 public class SolarSystem : MonoBehaviour {
 
-    public List<Transform> Spheres;
-    public List<Body> Bodies;
+	public List<Transform> Spheres;
+	public List<Body> Bodies;
 	public List<Planet> Planets;
 
-	public double G;
-    public double MassScale;
-    public double SizeScale;
-	public double DistanceScale;
-	public bool GravityEnabled;
-	public double GravityMultiplier;
+	public Gravity Gravity;
 
-	[Range(1f, 100f)]
-	public float TimeWarp;
+	public double MassScale;
+	public double SizeScale;
+	public double DistanceScale;
+
 
     private void Start()
     {
-
+		Gravity = new Gravity();
 		CreateSolarSystem();
 
 	}
@@ -32,12 +29,6 @@ public class SolarSystem : MonoBehaviour {
 		MassScale = 0.0000000000000000000001;
 		SizeScale = 0.0000001;
 		DistanceScale = 0.00000001;
-		TimeWarp = 1;
-
-		G = 6.67384 * Math.Pow(10, -11);
-		GravityMultiplier = 100000;
-		GravityEnabled = true;
-
 
 		foreach (Transform sphere in transform)
 		{
@@ -80,47 +71,10 @@ public class SolarSystem : MonoBehaviour {
 			}
 		}
 
-		
-
-	}
-
-	private void CreateRandomSystem()
-	{
-
-	}
-
-
-	private void DoGravity()
-	{
-		foreach (Body body in Bodies)
-		{
-
-			Vector3 CurrentPosition = body.Sphere.transform.position;
-			float thisMass = body.Sphere.GetComponent<Rigidbody>().mass;
-
-			foreach (Body bbody in Bodies)
-			{
-				if (body != bbody)
-				{
-
-					Vector3 Difference = CurrentPosition - bbody.Sphere.transform.position;
-					float Distance = Difference.magnitude;
-					float GravityForce = (float)(G * GravityMultiplier) * (bbody.Sphere.GetComponent<Rigidbody>().mass * thisMass) / (Distance * Distance);
-					Vector3 GravityVector = (Difference.normalized * GravityForce);
-
-					bbody.Sphere.GetComponent<Rigidbody>().AddForce(GravityVector, ForceMode.Force);
-				}
-			}
-		}
 	}
 
     private void FixedUpdate () {
 
-		//Time.timeScale = Time.timeScale * TimeWarp;
-
-		if (GravityEnabled)
-		{
-			DoGravity();
-		}
+		Gravity.Newtonize(Bodies);
 	}
 }

@@ -145,8 +145,8 @@ MonoBehaviour:
   parent: {fileID: 1209175154}
   G: 0
   GravityEnabled: 1
-  GravityMultiplier: 10000
-  NoOfBodies: 150
+  GravityMultiplier: 1000000
+  NoOfBodies: 500
 --- !u!4 &1209175156
 Transform:
   m_ObjectHideFlags: 0

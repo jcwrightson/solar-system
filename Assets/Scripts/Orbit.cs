@@ -7,16 +7,16 @@ public class Orbit : MonoBehaviour {
 
     public SolarSystem solarSystem;
     public Rigidbody rb;
-	public LineRenderer Lr;
+	private LineRenderer Lr;
 
 	public double OrbitalVelocity;
 	public double RelativeVelocity;
-    public double Velocity;
-    public double Period;
-    public double Apoapsis;
-    public double Periapsis;
-    public double SemiMajorAxis;
-    public double Altitude;
+	public double Velocity;
+	public double Period;
+	public double Apoapsis;
+	public double Periapsis;
+	public double SemiMajorAxis;
+	public double Altitude;
 
 	private void Start()
 	{
@@ -25,9 +25,9 @@ public class Orbit : MonoBehaviour {
 	}
 
 	private void FixedUpdate()
-    {
+	{
 
-		//      Velocity = Math.Round(rb.velocity.magnitude  / Time.fixedUnscaledDeltaTime, 4);
+		Velocity = Math.Round(rb.velocity.magnitude  / Time.fixedUnscaledDeltaTime, 4);
 
 		float Distance = Vector3.Distance(rb.transform.position, rb.transform.parent.transform.position);
 
@@ -37,29 +37,16 @@ public class Orbit : MonoBehaviour {
 
 	    Altitude = Math.Round(asl, 4);
 
-
-		//if (Altitude == 0)
-		//{
-		//	OrbitalVelocity = 0;
-		//}
-		//else
-		//{
-		//	OrbitalVelocity = Math.Round(Math.Sqrt(solarSystem.G * parent.mass / Distance), 4);
-		//}
-
-
-		//Debug.Log(rb.transform.parent.name);
-
-		DrawAxis();
+		//DrawAxis();
 		
 	}
 
 	public double calcVelocity(double Mass, double Radius){
-		return Math.Sqrt(solarSystem.G * Mass / Radius);
+		return Math.Sqrt(solarSystem.Gravity.G * Mass / Radius);
 	}
 
 	public double calcPeriod(double Radius, double Mass){
-		return 2 * Math.PI * Math.Sqrt(Mathf.Pow((float)Radius, 3) / solarSystem.G * Mass);
+		return 2 * Math.PI * Math.Sqrt(Mathf.Pow((float)Radius, 3) / solarSystem.Gravity.G * Mass);
 	}
 
 
