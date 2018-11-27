@@ -7,22 +7,32 @@ using UnityEngine;
 public class Gravity {
 
 	public double G;
-	public List<LineRenderer> Lines;
+	public bool ShowForceLines = true;
+	private List<LineRenderer> Lines;
 
 	public Gravity () {
 		G = 6.67408f * Math.Pow(10, -11);
 		Lines = new List<LineRenderer>();
 	}
 
-	public Gravity(int gexp)
-	{
-		G = G * Mathf.Exp(gexp);
+	public Gravity(float gexp){
+
+		G = (6.67408f * Math.Pow(10, -11)) * Math.Pow(10, gexp);
 		Lines = new List<LineRenderer>();
+
 	}
 
 	public Gravity(float g, int gexp){
+
 		G = g * Mathf.Exp(gexp);
 		Lines = new List<LineRenderer>();
+
+	}
+
+	public double GravityForce(double M1, double M2, float Distance){
+	
+		return G * (M1 * M2) / Math.Pow(Distance, 2);
+
 	}
 
 	public void Newtonize(List<Body> Bodies) {
@@ -31,35 +41,44 @@ public class Gravity {
 			return;
 		}
 
-		if(Lines.Count == 0)
+
+		if (ShowForceLines)
 		{
-			AttachLines(Bodies);
-		}else
-		{
-			UpdateLineOrigin(Bodies);
+			if (Lines.Count == 0)
+			{
+				AttachLines(Bodies);
+			}
+			else
+			{
+				UpdateLineOrigin(Bodies);
+			}
 		}
 
 
 		int i = 0;
-		foreach (Body body in Bodies){
+		foreach (Body body1 in Bodies){
 
-			Vector3 CurrentPosition = body.Sphere.transform.position;
-			float thisMass = body.Sphere.GetComponent<Rigidbody>().mass;
+			
+			foreach (Body body2 in Bodies) {
 
-			foreach (Body bbody in Bodies) {
+				if (ShowForceLines)
+				{
+					UpdateLineOrigin(Bodies);
+				}
 
-				UpdateLineOrigin(Bodies);
+				if (body1 != body2){
 
-				if (body != bbody){
-
-
-					Vector3 Difference = CurrentPosition - bbody.Sphere.transform.position;
+					Vector3 Difference = body1.Sphere.transform.position - body2.Sphere.transform.position;
 					float Distance = Difference.magnitude;
-					float GravityForce =  (float)G * 100000000 * (bbody.Sphere.GetComponent<Rigidbody>().mass * thisMass) / (Distance * Distance);
-					Vector3 Gv = (Difference.normalized * GravityForce);
+					double Gf = GravityForce(body1.Sphere.GetComponent<Rigidbody>().mass, body2.Sphere.GetComponent<Rigidbody>().mass, Distance);
+					Vector3 Gv = (Difference.normalized * (float)Gf);
 
-					bbody.Sphere.GetComponent<Rigidbody>().AddForce(Gv, ForceMode.Force);
-					UpdateLineVector(bbody.Sphere.transform.position, i, GravityForce);
+					body2.Sphere.GetComponent<Rigidbody>().AddForce(Gv, ForceMode.Force);
+
+					if (ShowForceLines) { 
+
+						UpdateLineVector(body2.Sphere.transform.position, i, (float)Gf, Distance);
+					}
 
 				
 					i++;
@@ -108,13 +127,15 @@ public class Gravity {
 		}
 	}
 
-	private void UpdateLineVector(Vector3 gvpos, int i, float F){
+	private void UpdateLineVector(Vector3 gvpos, int i, float F, float D){
 
-		Lines[i].startWidth = 5f;
-		Lines[i].endWidth = F;
+		float strength = (F / D) * 100;
+
+		Lines[i].startWidth = 0;
+		Lines[i].endWidth = strength;
 		Lines[i].SetPosition(1, gvpos);
 		Lines[i].startColor = Color.red;
-		Lines[i].endColor = Color.blue;
+		Lines[i].endColor = Color.clear;
 	}
 
 }

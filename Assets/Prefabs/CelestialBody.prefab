@@ -109,7 +109,7 @@ TrailRenderer:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 1105766162021736}
-  m_Enabled: 0
+  m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
@@ -142,7 +142,7 @@ TrailRenderer:
   m_Time: 10
   m_Parameters:
     serializedVersion: 2
-    widthMultiplier: 4.9718986
+    widthMultiplier: 0.9953476
     widthCurve:
       serializedVersion: 2
       m_Curve:
@@ -217,6 +217,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   solarSystem: {fileID: 0}
   rb: {fileID: 54874485696001314}
+  Focus: {fileID: 0}
   OrbitalVelocity: 0
   RelativeVelocity: 0
   Velocity: 0
@@ -225,6 +226,8 @@ MonoBehaviour:
   Periapsis: 0
   SemiMajorAxis: 0
   Altitude: 0
+  thisRadius: 0
+  focusRadius: 0
 --- !u!135 &135710430674807588
 SphereCollider:
   m_ObjectHideFlags: 1

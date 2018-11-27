@@ -11,13 +11,24 @@ public class Body {
     public double Mass;
     public double Radius;
     public double DistanceToParent;
+	public Body Focus;
 
     public Body(double mass, double radius, double distanceToParent, Transform sphere){
         Mass = mass;
         Radius = radius;
         DistanceToParent = distanceToParent;
         Sphere = sphere;
+		Focus = null;
     }
+
+	public Body(double mass, double radius, double distanceToParent, Transform sphere, Body focus)
+	{
+		Mass = mass;
+		Radius = radius;
+		DistanceToParent = distanceToParent;
+		Sphere = sphere;
+		Focus = focus;
+	}
 
 	public void PositionAndScale(double SizeScale, double DistanceScale, double MassScale)
 	{
@@ -31,5 +42,7 @@ public class Body {
 		Rb.transform.localScale = new Vector3((float)ScaledRadius, (float)ScaledRadius, (float)ScaledRadius);
 		Rb.transform.localPosition = new Vector3(-(float)ScaledDistanceToParent, 0, 0);
 	}
+
+
 
 }
