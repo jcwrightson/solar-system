@@ -4,64 +4,94 @@ using System.Collections.Generic;
 using UnityEngine;
 
 [System.Serializable]
-public class Gravity {
+public class Gravity
+{
 
 	public double G;
-	public List<LineRenderer> Lines;
+	public bool ShowForceLines;
+	private List<LineRenderer> Lines;
 
-	public Gravity () {
+	public Gravity()
+	{
 		G = 6.67408f * Math.Pow(10, -11);
 		Lines = new List<LineRenderer>();
 	}
 
-	public Gravity(int gexp)
+	public Gravity(float gexp)
 	{
-		G = G * Mathf.Exp(gexp);
+
+		G = (6.67408f * Math.Pow(10, -11)) * Math.Pow(10, gexp);
 		Lines = new List<LineRenderer>();
+
 	}
 
-	public Gravity(float g, int gexp){
+	public Gravity(float g, int gexp)
+	{
+
 		G = g * Mathf.Exp(gexp);
 		Lines = new List<LineRenderer>();
+
 	}
 
-	public void Newtonize(List<Body> Bodies) {
+	public double GravityForce(double M1, double M2, float Distance)
+	{
 
-		if (Bodies.Count < 2){
+		return G * (M1 * M2) / Math.Pow(Distance, 2);
+
+	}
+
+	public void Newtonize(List<Body> Bodies)
+	{
+
+		if (Bodies.Count < 2)
+		{
 			return;
 		}
 
-		if(Lines.Count == 0)
+
+		if (ShowForceLines)
 		{
-			AttachLines(Bodies);
-		}else
-		{
-			UpdateLineOrigin(Bodies);
+			if (Lines.Count == 0)
+			{
+				AttachLines(Bodies);
+			}
+			else
+			{
+				UpdateLineOrigin(Bodies);
+			}
 		}
 
 
 		int i = 0;
-		foreach (Body body in Bodies){
-
-			Vector3 CurrentPosition = body.Sphere.transform.position;
-			float thisMass = body.Sphere.GetComponent<Rigidbody>().mass;
-
-			foreach (Body bbody in Bodies) {
-
-				UpdateLineOrigin(Bodies);
-
-				if (body != bbody){
+		foreach (Body body1 in Bodies)
+		{
 
 
-					Vector3 Difference = CurrentPosition - bbody.Sphere.transform.position;
+			foreach (Body body2 in Bodies)
+			{
+
+				if (ShowForceLines)
+				{
+					UpdateLineOrigin(Bodies);
+				}
+
+				if (body1 != body2)
+				{
+
+					Vector3 Difference = body1.Sphere.transform.position - body2.Sphere.transform.position;
 					float Distance = Difference.magnitude;
-					float GravityForce =  (float)G * 100000000 * (bbody.Sphere.GetComponent<Rigidbody>().mass * thisMass) / (Distance * Distance);
-					Vector3 Gv = (Difference.normalized * GravityForce);
+					double Gf = GravityForce(body1.Sphere.GetComponent<Rigidbody>().mass, body2.Sphere.GetComponent<Rigidbody>().mass, Distance);
+					Vector3 Gv = (Difference.normalized * (float)Gf);
 
-					bbody.Sphere.GetComponent<Rigidbody>().AddForce(Gv, ForceMode.Force);
-					UpdateLineVector(bbody.Sphere.transform.position, i, GravityForce);
+					body2.Sphere.GetComponent<Rigidbody>().AddForce(Gv, ForceMode.Force);
 
-				
+					if (ShowForceLines)
+					{
+
+						UpdateLineVector(body2.Sphere.transform.position, i, (float)Gf, Distance);
+					}
+
+
 					i++;
 				}
 			}
@@ -70,12 +100,13 @@ public class Gravity {
 
 	private void AttachLines(List<Body> Bodies)
 	{
-		foreach(Body body in Bodies)
+		foreach (Body body in Bodies)
 		{
 
-			foreach (Body bbody in Bodies){
+			foreach (Body bbody in Bodies)
+			{
 
-				if(bbody != body)
+				if (bbody != body)
 				{
 					LineRenderer Line = new GameObject().AddComponent<LineRenderer>();
 					Line.material = new Material(Shader.Find("Sprites/Default"));
@@ -90,31 +121,36 @@ public class Gravity {
 		}
 	}
 
-	private void UpdateLineOrigin(List<Body> Bodies){
+	private void UpdateLineOrigin(List<Body> Bodies)
+	{
 
 		int i = 0;
-		int	x = 1;
+		int x = 1;
 
-		foreach (Body body in Bodies){
+		foreach (Body body in Bodies)
+		{
 			int LinesPerBody = Bodies.Count - 1;
 
-			while ( i < x * LinesPerBody)
+			while (i < x * LinesPerBody)
 			{
 				Lines[i].SetPosition(0, body.Sphere.position);
 				i++;
 			}
 			x++;
-			
+
 		}
 	}
 
-	private void UpdateLineVector(Vector3 gvpos, int i, float F){
+	private void UpdateLineVector(Vector3 gvpos, int i, float F, float D)
+	{
 
-		Lines[i].startWidth = 5f;
-		Lines[i].endWidth = F;
+		float strength = (F / D) * 100;
+
+		Lines[i].startWidth = 0;
+		Lines[i].endWidth = strength;
 		Lines[i].SetPosition(1, gvpos);
 		Lines[i].startColor = Color.red;
-		Lines[i].endColor = Color.blue;
+		Lines[i].endColor = Color.clear;
 	}
 
 }

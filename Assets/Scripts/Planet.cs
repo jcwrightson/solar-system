@@ -3,15 +3,17 @@ using System.Collections.Generic;
 using UnityEngine;
 
 [System.Serializable]
-public class Planet {
+public class Planet
+{
 
 	public string Name;
 	public List<Body> Moons;
-	public Body PlanetBody;
+	public Body Body;
 
-	public Planet(string name, Body planetBody) {
+	public Planet(string name, Body planetBody)
+	{
 		Name = name;
-		PlanetBody = planetBody;
+		Body = planetBody;
 		Moons = new List<Body>();
 	}
 
