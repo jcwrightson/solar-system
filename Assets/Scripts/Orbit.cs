@@ -1,180 +1,298 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 
-public class Orbit : MonoBehaviour
-{
+public class Orbit : MonoBehaviour {
 
-	public SolarSystem solarSystem;
-	public Rigidbody rb;
-	public Transform Focus;
-	private LineRenderer Lr;
+    public NewSystem solarSystem;
 
-	public double OrbitalVelocity;
-	public double RelativeVelocity;
-	public double OrbitalSpeed;
-	public double Velocity;
-	public double Period;
-	public double Apoapsis;
-	public double Periapsis;
-	public double MajorAxis;
-	public double ASL;
+    public Rigidbody rb;
+    public Transform Focus;
+    private LineRenderer Lr;
 
-	public int Orbits = 0;
+    public double OrbitalVelocity;
+    public double RelativeVelocity;
+    public double OrbitalSpeed;
+    public double Velocity;
+    public double Period;
+    public double Apoapsis;
+    public double Periapsis;
+    public double MajorAxis;
+    public double ASL;
+    public double Degrees;
 
-	public float thisRadius;
-	public float focusRadius;
+    public float Orbits = 0f;
 
-	private double CurrentAlt;
-	private double Altitude;
+    public float thisRadius;
+    public float focusRadius;
 
-	private Vector3 positionA;
-	private Vector3 positionB;
+    private double CurrentAlt;
+    private double Altitude; // 1 tick behind
 
-	private int I;
+    public Vector3 ae;
+    public Vector3 pe;
+    public Vector3 DescendingNode;
+    public Vector3 AscendingNode;
 
-	public Vector3 ap;
-	public Vector3 pe;
+    public float InititalVelocity;
+    public float forceMult = 1;
+    public float DistanceToPe;
+    public float DistanceToAp;
+
+    public GameObject nodePrefab;
+
+    private void Start ()
+
+    {
+
+        Lr = rb.transform.GetComponent<LineRenderer> ();
 
 
-	private void Start()
+        Vector3 targetVelocity = transform.rotation * Vector3.forward * (InititalVelocity * (float)solarSystem.DistanceScale);
+        Vector3 force = targetVelocity * forceMult;
+        rb.AddForce (force);
+
+        Focus = FindOrbitalParent(solarSystem.Bodies, solarSystem.GetBodyFromTransform(transform)).Sphere;
+        thisRadius = (transform.localScale.x / (float)solarSystem.DistanceScale) / 2 ;
+        focusRadius = (Focus.transform.localScale.x  / (float)solarSystem.DistanceScale) / 2;
+
+        if (Lr)
+        {
+            Lr.positionCount = 2;
+
+        }
+
+        // StartCoroutine(TrackAp());
+
+        // StartCoroutine(TrackPe());
+
+        
+    }
+
+    private void createNode(Vector3 position)
 	{
-		Lr = rb.transform.GetComponent<LineRenderer>();
 
+        Instantiate(nodePrefab, position, Quaternion.identity);
+    }
+
+    private void FixedUpdate () {
+
+        CurrentAlt = calcAltitude (); // Km
+
+        ASL = calcAltitudeAboveSeaLevel (); // meters
+
+        Velocity = calcVelocity (); // M/s
+
+        OrbitalSpeed = calcSpeed (rb.mass, CurrentAlt); // Km/s
+
+        Period = calcPeriod (MajorAxis > 0 ? MajorAxis / 2 : CurrentAlt, rb.mass);
+
+        if (Altitude > 0) {
+            if (CurrentAlt > Altitude && CurrentAlt > Apoapsis)
+            {
+                Apoapsis = CurrentAlt;
+                ae = transform.position;
+            }
+
+            if (CurrentAlt < Altitude && CurrentAlt < Periapsis || Periapsis == 0) {
+                Periapsis = CurrentAlt;
+                pe = transform.position;
+            }
+        }
+
+        Altitude = CurrentAlt;
+
+        MajorAxis = Apoapsis + Periapsis;
+
+        DrawAxis();
+
+        Vector3 DifferenceAp = ae - transform.position;
+        DistanceToAp = DifferenceAp.magnitude;
+
+        Vector3 DifferencePe = pe - transform.position;
+        DistanceToPe = DifferencePe.magnitude;
+
+
+    }
+
+    private bool AtAp()
+	{
+        if (Apoapsis > 0 && Periapsis > 0)
+        {
+            return Math.Floor(DistanceToAp) == 0;
+        }
+        return false;
+
+    }
+
+    private bool AtPe()
+    {
+        if (Apoapsis > 0 && Periapsis > 0)
+        {
+            return Math.Floor(DistanceToPe) == 0;
+        }
+        return false;
+
+    }
+    IEnumerator TrackAp()
+    {
+        yield return new WaitForSeconds(5);
+        Debug.Log("Tracking");
+        yield return new WaitUntil(AtAp);
+        Debug.Log("At AP");
+        if (ae == new Vector3(0, 0, 0))
+        {
+
+            createNode(transform.position);
+        }
+        StartCoroutine(TrackAp());
+
+    }
+
+    IEnumerator TrackPe()
+    {
+        yield return new WaitForSeconds(5);
+        Debug.Log("Tracking");
+        yield return new WaitUntil(AtPe);
+        Debug.Log("At Pe");
+        if (pe == new Vector3(0, 0, 0))
+        {
+
+            createNode(transform.position);
+        }
+        Orbits++;
+        StartCoroutine(TrackPe());
+
+    }
+    public double calcVelocity () {
+        return Math.Round ((rb.velocity.magnitude / solarSystem.DistanceScale), 4);
+    }
+    public double calcAltitude () {
+        return Math.Round ((Vector3.Distance (transform.position, Focus.position) / solarSystem.DistanceScale), 4);
+    }
+
+    public double calcAltitudeAboveSeaLevel () {
+        return Math.Round (Altitude - (thisRadius + focusRadius), 4);
+    }
+
+    public double calcSpeed (double Mass, double Radius) {
+        return Math.Round (Math.Sqrt (solarSystem.Gravity.G * (Mass / solarSystem.MassScale) / Radius), 4);
+    }
+
+    public double calcPeriod (double Radius, double Mass) {
+        return Math.Round (2 * Math.PI * Math.Sqrt (Mathf.Pow ((float) Radius, 3) / solarSystem.Gravity.G * (Mass / solarSystem.MassScale)), 2);
+    }
+
+    public double calcCircumference (double semiMajor, double semiMinor) {
+        // C = 2 x π x √((a2 + b2) ÷ 2)
+        return 2 * Math.PI * Math.Sqrt ((semiMajor * semiMajor + semiMinor * semiMinor) + 2);
+    }
+
+    public double radiansToDeg(double rads)
+	{
+        return (180 / Math.PI) * rads;
+	}
+
+    //float elapsed = 0f;
+    private void DrawAxis () {
 		if (Lr)
 		{
-			Lr.positionCount = 360;
-		}
-
-		Focus = FindOrbitalParent(solarSystem.Bodies, solarSystem.GetBodyFromTransform(transform)).Sphere;
-		rb.AddRelativeForce(new Vector3(0, 0, solarSystem.GetBodyFromTransform(transform).Shunt * rb.mass / Vector3.Distance(transform.position, Focus.position)));
-
-	}
-
-	private void Awake()
-	{
-
-
-	}
-
-	private void FixedUpdate()
-	{
-
-		thisRadius = transform.localScale.x / 2;
-		focusRadius = Focus.transform.localScale.x / 2;
-
-		CurrentAlt = Math.Round((Vector3.Distance(transform.position, Focus.position) / solarSystem.DistanceScale) / 1000, 4);
-
-		ASL = Math.Round((Vector3.Distance(transform.position, Focus.position) - (thisRadius + focusRadius)) / solarSystem.DistanceScale, 4);
-
-		Velocity = Math.Round((rb.velocity.magnitude / solarSystem.DistanceScale) / Time.fixedUnscaledDeltaTime, 4); // M/s
-
-		OrbitalSpeed = Math.Round(calcSpeed(rb.mass / solarSystem.MassScale, CurrentAlt), 4); // Km/s
-
-		
-		if (Altitude > 0)
-		{
-			if (CurrentAlt > Altitude && CurrentAlt > Apoapsis)
-			{
-				Apoapsis = CurrentAlt;
-				ap = transform.position;
-			}
-
-			if (CurrentAlt < Altitude && CurrentAlt < Periapsis || Periapsis == 0)
-			{
-				Periapsis = CurrentAlt;
-				pe = transform.position;
-			}
-		}
-
-		Altitude = CurrentAlt;
-
-		MajorAxis = Apoapsis + Periapsis;
-
-
-		if (Apoapsis > 0 && Periapsis > 0)
-		{
-
-			if (Vector3.Distance(ap, transform.position) == 0)
-			{
-				//Debug.Log("AT AP");
-				Orbits++;
-			}
-
-			if (Vector3.Distance(pe, transform.position) == 0)
-			{
-				//Debug.Log("AT PE");
-			}
-		}
-
-	}
-
-	public double calcSpeed(double Mass, double Radius)
-	{
-		return Math.Sqrt(solarSystem.Gravity.G * Mass / Radius);
-	}
-
-	public double calcPeriod(double Radius, double Mass)
-	{
-		return 2 * Math.PI * Math.Sqrt(Mathf.Pow((float)Radius, 3) / solarSystem.Gravity.G * Mass);
-	}
-
-	public double calcCircumfrence(double semiMajor, double semiMinor)
-	{
-		// C = 2 x π x √((a2 + b2) ÷ 2), 
-		return 2 * Math.PI * Math.Sqrt((semiMajor * semiMajor + semiMinor * semiMinor) + 2);
-	}
-
-	float elapsed = 0f;
-	private void DrawAxis() {
-
-		elapsed += Time.deltaTime;
-		if (elapsed >= 1f) {
-         elapsed = elapsed % 1f;
-			if (Lr)
-			{
-				//if(positionA && positionB)
-				//{
-					//float baseDistance = Vector3.Distance(positionA, positionB);
-					//Math.Tan * (2 * CurrentAlt) / baseDistance
-
-				//}
-				//Debug.Log(Time.deltaTime);
-			}
-		}
+            Lr.SetPosition(0, ae);
+            Lr.SetPosition(1, pe);
+        }
         
 
-	
-		
+        //elapsed += Time.deltaTime;
+        //if (elapsed >= 1f) {
+          //  elapsed = elapsed % 1f;
+           // if (Lr) {
+                
+             //   Lr.SetPosition(0, transform.position);
+               // Lr.SetPosition(1, Focus.transform.position);
+                //if(positionA && positionB)
+                //{
+                //float baseDistance = Vector3.Distance(positionA, positionB);
+                //Math.Tan * (2 * CurrentAlt) / baseDistance
 
-	}
+                //}
+                //Debug.Log(Time.deltaTime);
+    //        }
+     //   }
 
-	public Body FindOrbitalParent(List<Body> Bodies, Body Child)
-	{
-		if (Child.Focus == null)
+    }
+
+    public Body FindOrbitalParent (List<Body> Bodies, Body Child) {
+        if (Child.Focus == null) {
+            List<Body> tmp;
+            tmp = new List<Body> ();
+
+            foreach (Body body in Bodies) {
+                if (body != Child) {
+                    tmp.Add (body);
+                }
+
+            }
+
+            tmp.Sort (CompareMasses);
+            return tmp[tmp.Count - 1];
+        }
+
+        return Child.Focus;
+    }
+
+    private float SunPolarStrikes = -0.5f;
+
+    void OnTriggerEnter(Collider collider)
+    {
+        if(collider.gameObject.tag == "OrbitalPlane")
 		{
-			List<Body> tmp;
-			tmp = new List<Body>();
-
-			foreach (Body body in Bodies)
+            if(collider.gameObject.name == "Polar" && Focus.gameObject.name == "Sun")
 			{
-				if (body != Child)
-				{
-					tmp.Add(body);
-				}
+                SunPolarStrikes+= 0.5f;
 
+                Orbits = (float)Math.Floor(SunPolarStrikes - 1 / 2);
+                
+                //Debug.Log(collider.transform.rotation.z - transform.localRotation.z);
 			}
 
-			tmp.Sort(CompareMasses);
-			return tmp[tmp.Count - 1];
-		}
+            if (collider.gameObject.name == "Equator" && Focus.gameObject.name == "Sun")
+            {
+                Vector3 Difference = collider.transform.position - transform.position;
 
-		return Child.Focus;
-	}
+                if(Difference.z < 0)
+				{
+                    if(DescendingNode == new Vector3(0, 0, 0))
+					{
+                        
+                        createNode(transform.position);
+                    }
+                    Debug.Log("Descending Node");
+                    DescendingNode = transform.position;
+				}
 
-	static int CompareMasses(Body b1, Body b2)
-	{
-		return b1.Mass.CompareTo(b2.Mass);
-	}
+                if (Difference.z > 0)
+                {
+                    if (AscendingNode == new Vector3(0, 0, 0))
+                    {
+                       
+                        createNode(transform.position);
+                    }
+                    Debug.Log("Ascending Node");
+                    AscendingNode = transform.position;
+                }
+            }
+        }
+        //Debug.Log(collider.gameObject.name);
+        //Debug.Log(collider.gameObject.tag);
+
+        //Debug.Log(Focus.gameObject.name);
+    }
+
+
+
+    static int CompareMasses (Body b1, Body b2) {
+        return b1.Mass.CompareTo (b2.Mass);
+    }
 }
